@@ -1,0 +1,13 @@
+# Build artifacts
+*.log
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env files (if you add any)
+.env
+.env.local

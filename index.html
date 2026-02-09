@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Voice Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 90%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            opacity: 0.8;
+            margin-bottom: 40px;
+        }
+
+        .mic-button {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mic-button:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .mic-button.listening {
+            background: rgba(255, 87, 87, 0.4);
+            border-color: rgba(255, 87, 87, 0.6);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .mic-button.processing {
+            background: rgba(255, 193, 7, 0.4);
+            border-color: rgba(255, 193, 7, 0.6);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .mic-icon {
+            font-size: 60px;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 1.2em;
+            min-height: 30px;
+            margin-bottom: 20px;
+        }
+
+        .transcript {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 100px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .transcript:empty:before {
+            content: "Your question will appear here...";
+            opacity: 0.5;
+        }
+
+        .response {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 100px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .response:empty:before {
+            content: "OpenClaw's response will appear here...";
+            opacity: 0.5;
+        }
+
+        .config {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .config label {
+            display: block;
+            margin-bottom: 5px;
+            opacity: 0.8;
+        }
+
+        .config input {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.9em;
+        }
+
+        .config input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .error {
+            background: rgba(255, 87, 87, 0.3);
+            border-left: 4px solid #ff5757;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 OpenClaw Voice</h1>
+        <p class="subtitle">Click to speak, OpenClaw listens</p>
+
+        <div id="error-box" class="error hidden"></div>
+
+        <div class="mic-button" id="micButton">
+            <span class="mic-icon">🎤</span>
+        </div>
+
+        <div class="status" id="status">Ready to listen</div>
+
+        <div class="transcript" id="transcript"></div>
+        <div class="response" id="response"></div>
+
+        <div class="config">
+            <label for="gatewayUrl">OpenClaw Gateway URL:</label>
+            <input type="text" id="gatewayUrl" placeholder="ws://openclaw.local:18789" 
+                   value="ws://10.1.21.10:18789">
+            
+            <label for="gatewayToken" style="margin-top: 10px;">Gateway Token:</label>
+            <input type="password" id="gatewayToken" placeholder="your-gateway-token">
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openclaw-voice-ui
+  namespace: openclaw
+  labels:
+    app: openclaw-voice-ui
+    component: voice-assistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openclaw-voice-ui
+  template:
+    metadata:
+      labels:
+        app: openclaw-voice-ui
+    spec:
+      containers:
+        - name: voice-ui
+          image: openclaw-voice-ui:latest  # Update this after building
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101  # nginx user
+        fsGroup: 101
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openclaw-voice-ui
+  namespace: openclaw
+  labels:
+    app: openclaw-voice-ui
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: openclaw-voice-ui
+
+---
+# Optional: Ingress for external access
+# Uncomment and configure for your setup
+#
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: openclaw-voice-ui
+#   namespace: openclaw
+#   annotations:
+#     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+# spec:
+#   ingressClassName: nginx
+#   tls:
+#     - hosts:
+#         - voice.yourdomain.com
+#       secretName: voice-ui-tls
+#   rules:
+#     - host: voice.yourdomain.com
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: openclaw-voice-ui
+#                 port:
+#                   number: 80
