@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: voice-ui
-          image: openclaw-voice-ui:latest  # Update this after building
+          image: ghcr.io/crustasoong/openclaw-voice-ui:master
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
