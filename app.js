@@ -250,15 +250,21 @@ class VoiceAssistant {
     }
     
     loadConfig() {
+        // Priority:
+        // 1) localStorage (user override)
+        // 2) window.__OPENCLAW_CONFIG__ (env-injected defaults)
         const savedUrl = localStorage.getItem('openclaw_gateway_url');
         const savedToken = localStorage.getItem('openclaw_gateway_token');
-        
-        if (savedUrl) {
-            this.elements.gatewayUrl.value = savedUrl;
-        }
-        if (savedToken) {
-            this.elements.gatewayToken.value = savedToken;
-        }
+
+        const injected = window.__OPENCLAW_CONFIG__ || {};
+        const injectedUrl = injected.gatewayUrl;
+        const injectedToken = injected.gatewayToken;
+
+        const url = savedUrl || injectedUrl;
+        const token = savedToken || injectedToken;
+
+        if (url) this.elements.gatewayUrl.value = url;
+        if (token) this.elements.gatewayToken.value = token;
     }
     
     saveConfig() {

@@ -20,6 +20,13 @@ spec:
         - name: voice-ui
           image: ghcr.io/crustasoong/openclaw-voice-ui:master
           imagePullPolicy: IfNotPresent
+          env:
+            - name: OPENCLAW_GATEWAY_URL
+              # Example: ws://openclaw:18789 (cluster DNS) or wss://openclaw.yourdomain.com
+              value: "ws://openclaw:18789"
+            - name: OPENCLAW_GATEWAY_TOKEN
+              # Recommended: set via a Secret in real deployments
+              value: ""
           ports:
             - containerPort: 80
               name: http
