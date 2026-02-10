@@ -13,16 +13,30 @@ Beautiful web interface for interacting with OpenClaw via voice. Click to speak,
 
 ## 🚀 Quick Start
 
-### Option 1: Docker Run (Testing)
+### Option 1: Run the prebuilt image (recommended)
 
 ```bash
-docker build -t openclaw-voice-ui .
-docker run -p 8080:80 openclaw-voice-ui
+docker run --rm -p 8080:80 ghcr.io/crustasoong/openclaw-voice-ui:master
 ```
 
 Open http://localhost:8080 and configure your OpenClaw gateway URL!
 
-### Option 2: Kubernetes Deployment (Production)
+### Option 2: Build locally
+
+```bash
+docker build -t openclaw-voice-ui .
+docker run --rm -p 8080:80 openclaw-voice-ui
+```
+
+### Option 3: Kubernetes Deployment (Production)
+
+If you published the image via GitHub Actions (GHCR), set your image to something like:
+
+```yaml
+image: ghcr.io/crustasoong/openclaw-voice-ui:master
+```
+
+Then deploy as usual:
 
 ```bash
 # 1. Build and push image
