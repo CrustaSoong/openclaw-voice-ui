@@ -7,11 +7,15 @@ COPY config.js /usr/share/nginx/html/
 
 # Runtime config generator
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN chmod +x /entrypoint.sh \
+ && chown -R nginx:nginx /usr/share/nginx/html
 
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# Unprivileged port for runAsNonRoot
+EXPOSE 8080
+
+USER nginx
 
 CMD ["/entrypoint.sh"]
