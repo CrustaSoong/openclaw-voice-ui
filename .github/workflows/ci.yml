@@ -7,7 +7,7 @@ on:
 jobs:
   docker-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -22,11 +22,37 @@ jobs:
           echo "container uid=$uid"
           test "$uid" != "0"
 
-      - name: Start container
+      - name: Create docker network
+        run: |
+          docker network create openclaw-ci
+
+      - name: Start OpenClaw gateway (sidecar)
+        run: |
+          docker run -d --rm \
+            --name openclaw-gateway \
+            --network openclaw-ci \
+            -e OPENCLAW_GATEWAY_TOKEN=testtoken \
+            -p 18789:18789 \
+            ghcr.io/openclaw/openclaw:2026.2.6-3
+
+      - name: Wait for OpenClaw gateway health
+        run: |
+          for i in $(seq 1 60); do
+            if docker exec openclaw-gateway node dist/index.js health --token testtoken >/dev/null 2>&1; then
+              echo "gateway ready"; exit 0
+            fi
+            sleep 1
+          done
+          echo "gateway did not become healthy" >&2
+          docker logs openclaw-gateway || true
+          exit 1
+
+      - name: Start voice-ui container
         run: |
           docker run -d --rm \
             -p 8080:8080 \
-            -e OPENCLAW_GATEWAY_URL=ws://example.invalid:18789 \
+            --network openclaw-ci \
+            -e OPENCLAW_GATEWAY_URL=ws://openclaw-gateway:18789 \
             -e OPENCLAW_GATEWAY_TOKEN=testtoken \
             --name voice-ui \
             openclaw-voice-ui:ci
@@ -47,7 +73,7 @@ jobs:
         run: |
           curl -fsS http://127.0.0.1:8080/ | head -n 20
           curl -fsS http://127.0.0.1:8080/config.js | tee /tmp/config.js
-          grep -q 'gatewayUrl: "ws://example.invalid:18789"' /tmp/config.js
+          grep -q 'gatewayUrl: "ws://openclaw-gateway:18789"' /tmp/config.js
           grep -q 'gatewayToken: "testtoken"' /tmp/config.js
 
       - name: Nginx config test (inside container)
@@ -57,9 +83,12 @@ jobs:
       - name: Dump logs on failure
         if: failure()
         run: |
+          docker logs openclaw-gateway || true
           docker logs voice-ui || true
 
-      - name: Stop container
+      - name: Stop containers
         if: always()
         run: |
           docker stop voice-ui || true
+          docker stop openclaw-gateway || true
+          docker network rm openclaw-ci || true
