@@ -35,15 +35,17 @@ jobs:
             -p 18789:18789 \
             ghcr.io/openclaw/openclaw:2026.2.6-3
 
-      - name: Wait for OpenClaw gateway health
+      - name: Wait for OpenClaw gateway to accept connections
         run: |
-          for i in $(seq 1 60); do
-            if docker exec openclaw-gateway node /app/dist/index.js health --token testtoken >/dev/null 2>&1; then
+          # The openclaw image CLI 'health' command has changed across versions;
+          # verify readiness by checking the gateway port inside the container.
+          for i in $(seq 1 120); do
+            if docker exec openclaw-gateway node -e "const net=require('net');const s=net.connect(18789,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));" >/dev/null 2>&1; then
               echo "gateway ready"; exit 0
             fi
             sleep 1
           done
-          echo "gateway did not become healthy" >&2
+          echo "gateway did not become ready" >&2
           docker logs openclaw-gateway || true
           exit 1
 
