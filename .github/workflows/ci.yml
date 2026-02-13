@@ -65,12 +65,55 @@ jobs:
             -v /tmp/Caddyfile:/etc/caddy/Caddyfile:ro \
             caddy:2-alpine
 
-      - name: Wait for WSS handshake
+      - name: Wait for WSS handshake (repeat)
         env:
           NODE_TLS_REJECT_UNAUTHORIZED: "0"
         run: |
           # Use a self-signed cert (caddy tls internal). For CI smoke, disable TLS verification.
-          node -e "const { WebSocket } = require('undici'); const ws = new WebSocket('wss://127.0.0.1:8443'); const t=setTimeout(()=>{console.error('timeout');process.exit(1)},15000); ws.onopen=()=>{clearTimeout(t); console.log('wss ok'); ws.close();}; ws.onerror=(e)=>{clearTimeout(t); console.error('wss error', e); process.exit(1);};"
+          # Repeat connects to catch flaky proxy startup / intermittent handshake failures.
+          node - <<'NODE'
+          const { WebSocket } = require('undici');
+
+          const url = 'wss://127.0.0.1:8443';
+          const attempts = 10;
+          const delayMs = 500;
+          const perAttemptTimeoutMs = 5000;
+
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+          async function tryOnce(i) {
+            return await new Promise((resolve, reject) => {
+              const ws = new WebSocket(url);
+              const t = setTimeout(() => {
+                try { ws.close(); } catch {}
+                reject(new Error(`attempt ${i}: timeout after ${perAttemptTimeoutMs}ms`));
+              }, perAttemptTimeoutMs);
+
+              ws.onopen = () => {
+                clearTimeout(t);
+                ws.close();
+                resolve();
+              };
+              ws.onerror = (e) => {
+                clearTimeout(t);
+                reject(new Error(`attempt ${i}: error ${e && e.message ? e.message : String(e)}`));
+              };
+            });
+          }
+
+          (async () => {
+            for (let i = 1; i <= attempts; i++) {
+              try {
+                await tryOnce(i);
+                console.log(`wss ok (attempt ${i}/${attempts})`);
+              } catch (err) {
+                console.error(`wss failed (attempt ${i}/${attempts}):`, err.message || err);
+                process.exit(1);
+              }
+              await sleep(delayMs);
+            }
+          })();
+          NODE
 
       - name: Start voice-ui container
         run: |
