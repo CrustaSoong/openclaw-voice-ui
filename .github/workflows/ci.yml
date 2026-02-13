@@ -72,7 +72,12 @@ jobs:
           # Use a self-signed cert (caddy tls internal). For CI smoke, disable TLS verification.
           # Repeat connects to catch flaky proxy startup / intermittent handshake failures.
           node - <<'NODE'
-          const { WebSocket } = require('undici');
+          // Node 20+ provides a global WebSocket (via undici). Avoid requiring extra deps.
+          const WebSocket = globalThis.WebSocket;
+          if (!WebSocket) {
+            console.error('WebSocket is not available in this Node runtime');
+            process.exit(1);
+          }
 
           const url = 'wss://127.0.0.1:8443';
           const attempts = 10;
